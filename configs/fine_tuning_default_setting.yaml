@@ -1,0 +1,54 @@
+DEFAULT:
+  exp_name: personal
+  seed: 42
+
+DATASET:
+  taskname: long_term_forecast
+  dataname: custom
+  sub_data_name: None
+  scale: standard
+  window_size: 60
+  label_len: 5
+  pred_len: 24
+  model_type: forecasting
+  pretrain: false
+  split_rate: [0.7, 0.1, 0.2]
+  timeenc: 0
+  freq: h
+
+DATAINFO:
+  datadir: ./dataset/exchange_rate/exchange_rate.csv
+
+MODEL:
+  modelname: TMAE
+
+TRAIN:
+  epoch: 20
+  batch_size: 128
+  test_batch_size: 64
+  num_workers: 0
+  ckp_metric: MSE
+  eval_interval: 40
+  log_interval: 40
+  log_test_interval: 40
+  shuffle: false
+  pin_memory: true
+  resume: true
+  resume_number: 0
+  wandb: 
+    use: false
+    exp_name: default
+    project_name: 'TMAE'
+    entity: jinwoo
+
+LOSS:
+  loss_name: MSELoss
+
+OPTIMIZER:
+  opt_name: AdamW
+  lr: 0.0001
+  params:
+    weight_decay: 0.0005
+
+RESULT:
+  savedir: './saved_model'

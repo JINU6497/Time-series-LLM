@@ -133,5 +133,7 @@ dmypy.json
 .idea
 .DS_Store
 
+# folder
 dataset/
 saved_model/
+*.ipynb

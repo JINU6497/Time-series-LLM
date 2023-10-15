@@ -1,42 +1,48 @@
 DEFAULT:
-  exp_name: forecasting_exchange_rate_96_24_noscale
+  exp_name: forecasting_exchange_rate_96_24_noscale 
   seed: 42
 
 DATASET:
   taskname: long_term_forecast
   dataname: custom
   sub_data_name: None
-  scale: null
-  window_size: 96
+  scale: standard
+  window_size: 336
   label_len: 0
-  pred_len: 24
+  pred_len: 96
   model_type: forecasting
   pretrain: false
   split_rate: [0.7, 0.1, 0.2]
   timeenc: 0
   freq: h
+  embed_type: learned
 
 DATAINFO:
-  datadir: ./dataset/exchange_rate/exchange_rate.csv
-
-MODEL:
-  modelname: DLinear
+  datadir: ./dataset/ETT-small/ETTh1.csv
+  train_path: 
+  valid_path: 
+  test_path: 
+  test_label_path: 
 
 TRAIN:
   epoch: 25
-  batch_size: 128
-  test_batch_size: 8
+  batch_size: 32
+  test_batch_size: 4
   num_workers: 0
   ckp_metric: MSE
-  eval_interval: 30
-  log_interval: 30
-  log_test_interval: 30
+  eval_epochs: 1
+  log_epochs: 1
+  log_eval_iter: 50
   shuffle: false
   pin_memory: true
   resume: false
-  resume_number: 5
+  resume_number: 0
+  early_stopping_metric: loss
+  early_stopping_count: 5
+  lradj: type1
   wandb: 
     use: false
+    iter: 50
     exp_name: default
     project_name: 'TMAE'
     entity: jinwoo

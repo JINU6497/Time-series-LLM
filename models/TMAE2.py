@@ -97,7 +97,7 @@ class TimesMaskingBlock(nn.Module):
                 masking_input = self.mask_specific_size(input_tensor = conv_output_list[i], 
                                                             mask_size = (3, 3),
                                                             num_masked = 3 * (i+1)).reshape(Bm, -1, Dm)
-                conv_masked_output_flatten = (self.encoder(masking_input, attn_mask=None))
+                conv_masked_output_flatten = self.encoder(masking_input, attn_mask=None)
                 conv_masked_output.append(conv_masked_output_flatten.reshape(Bm, Dm, Hm, Wm))
 
                 total_input.append(conv_output_list[i].reshape(Bm, -1, Dm))

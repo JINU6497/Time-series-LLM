@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from layers.Autoformer_EncDec import series_decomp
 
-
 class DLinear(nn.Module):
     """
     Paper link: https://arxiv.org/pdf/2205.13504.pdf

@@ -4,4 +4,7 @@ from .LightTS import LightTS
 from .TMAE import TMAE
 from .TMAE1 import TMAE1
 from .TMAE2 import TMAE2
+from .TMAE3 import TMAE3
+from .LLM4TS import LLM4TS
+from .PatchTST import PatchTST
 from .factory import create_model

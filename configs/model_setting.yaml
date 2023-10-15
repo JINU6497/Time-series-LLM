@@ -1,10 +1,10 @@
 TimesNet:
   e_layers: 2
   d_layers: 1 
-  enc_in: 8 
-  dec_in: 8 
-  c_out: 8 
-  d_model: 96 
+  enc_in: 125 
+  dec_in: 125 
+  c_out: 125 
+  d_model: 16 
   d_ff: 64 
   top_k: 5 
   dropout: 0.1
@@ -14,69 +14,46 @@ TimesNet:
 
 DLinear:
   moving_avg: 25
-  enc_in: 8 
+  enc_in: 125 
   dropout: 0.1
-
-TMAE:
-  e_layers: 2
-  d_layers: 1 
-  factor: 3 
-  enc_in: 8 
-  dec_in: 8 
-  c_out: 8 
-  d_model: 96 
-  d_ff: 64 
-  top_k: 5 
-  dropout: 0.1
-  output_attention: None
-  n_heads: 8
-  activation: gelu
-  embed: timeF
 
 TMAE1:
   e_layers: 2
   d_layers: 1 
   factor: 3 
-  enc_in: 8 
-  dec_in: 8 
-  c_out: 8 
-  d_model: 96 
+  enc_in: 125 
+  dec_in: 125 
+  c_out: 125 
+  d_model: 16 
   d_ff: 64 
   top_k: 3
   dropout: 0.1
   output_attention: None
-  n_heads: 8
+  n_heads: 6
   activation: gelu
   embed: timeF
 
-TMAE2:
+PatchTST:
   e_layers: 2
   d_layers: 1 
   factor: 3 
-  enc_in: 8 
-  dec_in: 8 
-  c_out: 8 
-  d_model: 96 
-  d_ff: 64 
-  top_k: 5 
+  enc_in: 125 
+  dec_in: 125 
+  c_out: 125 
+  d_model: 16 
+  d_ff: 64
   dropout: 0.1
   output_attention: None
-  n_heads: 8
+  n_heads: 6
   activation: gelu
   embed: timeF
 
-TMAE3:
-  e_layers: 2
-  d_layers: 1 
-  factor: 3 
-  enc_in: 8 
-  dec_in: 8 
-  c_out: 8 
-  d_model: 96 
-  d_ff: 64 
-  top_k: 5 
+LLM4TS:
+  patch_size: 20
+  stride: 5
+  channel_independence: True
+  mode: DFT
+  d_ff: 64
+  d_model: 768
+  gpt_layers: 6
   dropout: 0.1
-  output_attention: None
-  n_heads: 8
-  activation: gelu
-  embed: timeF

@@ -1,3 +1,1 @@
-from .exp_pretraining import training, test
 from .exp_long_term_forecasting import training_long_term_forecasting, test_long_term_forecasting
-from .exp_anomaly_detection import  training_anomaly_detection, test_anomaly_detection

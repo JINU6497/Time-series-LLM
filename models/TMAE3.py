@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.fft
+import numpy as np
 from layers.Embed import DataEmbedding
 from layers.Conv_Blocks import conv_resize_up_scailing, conv_resizeback_up_scailing
-from layers.Transformer_EncDec import Decoder, DecoderLayer, Encoder, EncoderLayer, ConvLayer
-from layers.SelfAttention_Family import ProbAttention, AttentionLayer, FullAttention
+from layers.VQVAE_EncDec import VQVAEEncoder, VQVAEDecoder
 import pdb
 
 def FFT_for_Period(x, k=2):
@@ -29,46 +29,15 @@ class TimesMaskingBlock(nn.Module):
         self.conv_resize_up_scailing = conv_resize_up_scailing(in_channels = configs.d_model, out_channels = configs.d_model)
         self.conv_resizeback_up_scailing = conv_resizeback_up_scailing(in_channels = configs.d_model, out_channels = configs.d_model)
         
-        self.encoder = Encoder(
-            [
-                EncoderLayer(
-                    AttentionLayer(
-                        FullAttention(False, configs.factor, attention_dropout=configs.dropout,
-                                        output_attention=configs.output_attention), configs.d_model, configs.n_heads),
-                    configs.d_model,
-                    configs.d_ff,
-                    dropout=configs.dropout,
-                    activation=configs.activation
-                ) for l in range(configs.e_layers)
-            ],
-            norm_layer=torch.nn.LayerNorm(configs.d_model)
-        )
-        
-        # self.decoder = Decoder(
-        # [
-        #     DecoderLayer(
-        #         AttentionLayer(
-        #             FullAttention(True, configs.factor, attention_dropout=configs.dropout, output_attention=False),
-        #             configs.d_model, configs.n_heads),
-        #         AttentionLayer(
-        #             FullAttention(False, configs.factor, attention_dropout=configs.dropout, output_attention=False),
-        #             configs.d_model, configs.n_heads),
-        #         configs.d_model,
-        #         configs.d_ff,
-        #         dropout=configs.dropout,
-        #         activation=configs.activation,
-        #     )
-        #     for l in range(configs.d_layers)
-        # ],
-        # norm_layer=torch.nn.LayerNorm(configs.d_model)
-        # )
+        self.encoder = VQVAEEncoder(d=32, num_channels=configs.d_model, downsample_rate=4, n_resnet_blocks=2)
+        self.decoder = VQVAEDecoder(d=32, num_channels=configs.d_model, downsample_rate=4, n_resnet_blocks=2)
         
     def forward(self, x):
         B, T, N = x.size()
         period_list, period_weight = FFT_for_Period(x, self.k)
 
         res = []
-        conv_masked_output = []
+        recons_output = []
         total_input = []
         total_masked_output = []
         
@@ -92,15 +61,21 @@ class TimesMaskingBlock(nn.Module):
                 Bm, Dm, Hm, Wm = conv_output_list[i].size()
                 masking_input = self.mask_specific_size(input_tensor = conv_output_list[i], 
                                                             mask_size = (3, 3),
-                                                            num_masked = 3 * (i+1)).reshape(Bm, -1, Dm)
-                conv_masked_output_flatten = self.encoder(masking_input, attn_mask=None)
-                conv_masked_output.append(conv_masked_output_flatten.reshape(Bm, Dm, Hm, Wm))
+                                                            num_masked = 3 * (i+1))
 
-                total_input.append(conv_output_list[i].reshape(Bm, -1, Dm).detach().cpu().numpy())
-                total_masked_output.append(conv_masked_output_flatten.detach().cpu().numpy())
+                z = self.encoder(masking_input)
+                
+                self.decoder.upsample_size = torch.IntTensor(np.array([Hm, Wm]))
+                
+                recons = self.decoder(z)
+                
+                recons_output.append(recons)
+
+                total_input.append(conv_output_list[i].detach().cpu().numpy())
+                total_masked_output.append(recons.detach().cpu().numpy())
             
-            out = self.conv_resizeback_up_scailing(conv_masked_output)
-            conv_masked_output = []
+            out = self.conv_resizeback_up_scailing(recons_output)
+            recons_output = []
             
             # reshape back
             out = out.permute(0, 2, 3, 1).reshape(B, -1, N)
@@ -143,9 +118,9 @@ class TimesMaskingBlock(nn.Module):
         return x_masked
 
 
-class TMAE1(nn.Module):
+class TMAE3(nn.Module):
     def __init__(self, configs):
-        super(TMAE1, self).__init__()
+        super(TMAE3, self).__init__()
         self.configs = configs
         self.task_name = configs.taskname
         self.window_size = configs.window_size

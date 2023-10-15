@@ -5,24 +5,52 @@ import time
 
 plt.switch_backend('agg')
 
+def update_information(model_name, cfg, information_dict):
+    cfg.MODELSETTING.window_size = cfg.DATASET.window_size
+    cfg.MODELSETTING.label_len = cfg.DATASET.label_len
+    cfg.MODELSETTING.pred_len = cfg.DATASET.pred_len
+    cfg.MODELSETTING.taskname = cfg.DATASET.taskname
+    cfg.MODELSETTING.pretrain = cfg.DATASET.pretrain
+    cfg.MODELSETTING.timeenc = cfg.DATASET.timeenc
+    cfg.MODELSETTING.freq = cfg.DATASET.freq
+    cfg.MODELSETTING.embed_type = cfg.DATASET.embed_type
 
-def adjust_learning_rate(optimizer, epoch, args):
-    # lr = args.learning_rate * (0.2 ** (epoch // 2))
-    if args.lradj == 'type1':
-        lr_adjust = {epoch: args.learning_rate * (0.5 ** ((epoch - 1) // 1))}
-    elif args.lradj == 'type2':
+    if model_name == 'DLinear':
+        cfg.MODELSETTING.enc_in = information_dict['enc_in']
+
+    elif model_name == 'TMAE1':
+        cfg.MODELSETTING.enc_in = information_dict['enc_in']
+        cfg.MODELSETTING.dec_in = information_dict['dec_in']
+        cfg.MODELSETTING.c_out = information_dict['c_out']
+
+    elif model_name == 'TimesNet':
+        cfg.MODELSETTING.enc_in = information_dict['enc_in']
+        cfg.MODELSETTING.dec_in = information_dict['dec_in']
+        cfg.MODELSETTING.c_out = information_dict['c_out']
+    
+    else:
+        cfg.MODELSETTING.enc_in = information_dict['enc_in']
+        cfg.MODELSETTING.dec_in = information_dict['dec_in']
+        cfg.MODELSETTING.c_out = information_dict['c_out']
+ 
+
+def adjust_learning_rate(optimizer, epoch, lradj, learning_rate):
+    # lr = learning_rate * (0.2 ** (epoch // 2))
+    if lradj == 'type1':
+        lr_adjust = {epoch: learning_rate * (0.5 ** ((epoch - 1) // 1))}
+    elif lradj == 'type2':
         lr_adjust = {
             2: 5e-5, 4: 1e-5, 6: 5e-6, 8: 1e-6,
             10: 5e-7, 15: 1e-7, 20: 5e-8
         }
-    elif args.lradj == '3':
-        lr_adjust = {epoch: args.learning_rate if epoch < 10 else args.learning_rate*0.1}
-    elif args.lradj == '4':
-        lr_adjust = {epoch: args.learning_rate if epoch < 15 else args.learning_rate*0.1}
-    elif args.lradj == '5':
-        lr_adjust = {epoch: args.learning_rate if epoch < 25 else args.learning_rate*0.1}
-    elif args.lradj == '6':
-        lr_adjust = {epoch: args.learning_rate if epoch < 5 else args.learning_rate*0.1}  
+    elif lradj == 'type3':
+        lr_adjust = {epoch: learning_rate if epoch < 10 else learning_rate*0.1}
+    elif lradj == 'type4':
+        lr_adjust = {epoch: learning_rate if epoch < 15 else learning_rate*0.1}
+    elif lradj == 'type5':
+        lr_adjust = {epoch: learning_rate if epoch < 25 else learning_rate*0.1}
+    elif lradj == 'type6':
+        lr_adjust = {epoch: learning_rate if epoch < 5 else learning_rate*0.1}  
     if epoch in lr_adjust.keys():
         lr = lr_adjust[epoch]
         for param_group in optimizer.param_groups:
@@ -31,20 +59,18 @@ def adjust_learning_rate(optimizer, epoch, args):
 
 
 class EarlyStopping:
-    def __init__(self, patience=7, verbose=False, delta=0):
+    def __init__(self, patience=5, delta=0):
         self.patience = patience
-        self.verbose = verbose
         self.counter = 0
         self.best_score = None
         self.early_stop = False
         self.val_loss_min = np.Inf
         self.delta = delta
-
-    def __call__(self, val_loss, model, path):
+    def __call__(self, val_loss):
         score = -val_loss
         if self.best_score is None:
             self.best_score = score
-            self.save_checkpoint(val_loss, model, path)
+            self.val_loss_min = val_loss
         elif score < self.best_score + self.delta:
             self.counter += 1
             print(f'EarlyStopping counter: {self.counter} out of {self.patience}')
@@ -52,14 +78,8 @@ class EarlyStopping:
                 self.early_stop = True
         else:
             self.best_score = score
-            self.save_checkpoint(val_loss, model, path)
+            self.val_loss_min = val_loss
             self.counter = 0
-
-    def save_checkpoint(self, val_loss, model, path):
-        if self.verbose:
-            print(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
-        torch.save(model.state_dict(), path + '/' + 'checkpoint.pth')
-        self.val_loss_min = val_loss
 
 
 class dotdict(dict):

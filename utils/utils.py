@@ -9,6 +9,7 @@ import logging
 import glob
 import shutil
 import json
+from accelerate import Accelerator
 
 def set_seed(random_seed: int = 72):
     """
@@ -330,7 +331,7 @@ def log_setting(logdir: str,
     return logger
 
 
-def make_save(savedir: str, resume: bool = False) -> str:
+def make_save(accelerator, savedir: str, resume: bool = False) -> str:
     # resume
     if resume:
         assert os.path.isdir(savedir), f'{savedir} does not exist'
@@ -342,18 +343,22 @@ def make_save(savedir: str, resume: bool = False) -> str:
             files = [f for f in glob.glob(os.path.join(savedir, '*')) if os.path.isfile(f)]
             # make version0
             version0_dir = os.path.join(savedir, f'train{version}')
-            os.makedirs(version0_dir)
+            
             # move saved files into version0
-            for f in files:
-                shutil.move(f, f.replace(savedir, version0_dir))
-                
+            accelerator.wait_for_everyone()
+            if accelerator.is_main_process:
+                os.makedirs(version0_dir)
+                for f in files:
+                    shutil.move(f, f.replace(savedir, version0_dir))
             version += 1
         
         savedir = os.path.join(savedir, f'train{version}')
 
     # make save directory
-    assert not os.path.isdir(savedir), f'{savedir} already exists'
-    os.makedirs(savedir)
+    # assert not os.path.isdir(savedir), f'{savedir} already exists'
+    accelerator.wait_for_everyone()
+    if accelerator.is_main_process:
+        os.makedirs(savedir, exist_ok=True)
     print("make save directory {}".format(savedir))
 
     return savedir
@@ -361,12 +366,12 @@ def make_save(savedir: str, resume: bool = False) -> str:
 def load_resume_model(model, savedir: str, resume_num: int):
     # check latest version (previous version)
     latest_version = int(savedir.split('train')[-1]) - 1
-    
+
     # load latest weights
     new_weights = torch.load(
         os.path.join(
             savedir.replace(f'train{latest_version+1}', f'train{resume_num}'),
-            'latest_model.pt'
+            'best_model.pt'
         )
     )
     # load weights

@@ -9,6 +9,7 @@ import dateutil
 import pdb
 from omegaconf import OmegaConf
 
+
 def dataframe_from_csv(target):
     return pd.read_csv(target).rename(columns=lambda x: x.strip())
 
@@ -220,12 +221,12 @@ def load_anomaly_dataset(dataname: str, datainfo: dict, subdataname: str = None,
     return trainset, train_timestamp, validset, valid_timestamp, testset, test_timestamp, test_label
 
 
-
-def load_custom_dataset(dataname: str, datainfo: dict, subdataname: str = None, split_rate: list = [0.7, 0.1, 0.2], timeenc = 0, freq='h'):
+def load_custom_dataset(dataname: str, datainfo: dict, window_size: int, label_len: int, pred_len:int, 
+                        split_rate: list = [0.7, 0.1, 0.2], timeenc = 0, freq='h'):
     datainfo = OmegaConf.create(datainfo)    
     
     try:
-        assert dataname in ['custom']
+        assert dataname in ['custom', 'etth', 'ettm']
     except AssertionError as e:
         raise
     
@@ -238,8 +239,8 @@ def load_custom_dataset(dataname: str, datainfo: dict, subdataname: str = None, 
         cols.remove('date')
         num_train, num_valid, num_test  = int(len(df_raw) * split_rate[0]), int(len(df_raw) * split_rate[1]), int(len(df_raw) * split_rate[2])
         df_data = df_raw[cols]
-        df_stamp = df_raw[['date']]
-        df_stamp['date'] = pd.to_datetime(df_stamp.date)
+        df_stamp = df_raw[['date']].copy()
+        df_stamp['date'] = pd.to_datetime(df_stamp['date']).copy()
         if timeenc == 0:
             df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
             df_stamp['day'] = df_stamp.date.apply(lambda row: row.day, 1)
@@ -255,4 +256,51 @@ def load_custom_dataset(dataname: str, datainfo: dict, subdataname: str = None, 
         validset, valid_timeembedding = df_data[num_train:num_train + num_valid], data_stamp[num_train:num_train + num_valid]
         testset, test_timeembedding = df_data[num_train + num_valid:num_train + num_valid + num_test], data_stamp[num_train + num_valid:num_train + num_valid + num_test]
         
+        if dataname == 'etth1' or dataname == 'etth2':
+            df_raw = pd.read_csv(datainfo.datadir)
+            cols = list(df_raw.columns)
+            cols.remove('date')
+            df_data = df_raw[cols]
+            df_stamp = df_raw[['date']].copy()
+            df_stamp['date'] = pd.to_datetime(df_stamp['date']).copy()
+            if timeenc == 0:
+                df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
+                df_stamp['day'] = df_stamp.date.apply(lambda row: row.day, 1)
+                df_stamp['weekday'] = df_stamp.date.apply(lambda row: row.weekday(), 1)
+                df_stamp['hour'] = df_stamp.date.apply(lambda row: row.hour, 1)
+                data_stamp = df_stamp.drop(['date'], axis = 1).to_numpy()
+            elif timeenc == 1:
+                data_stamp = time_features(pd.to_datetime(df_stamp['date'].to_numpy()), freq=freq)
+                data_stamp = data_stamp.transpose(1, 0)
+                
+            df_data, df_stamp = df_data.to_numpy(), df_stamp.to_numpy()
+            trainset, train_timeembedding = df_data[ : 12 * 30 * 24], data_stamp[ : 12 * 30 * 24]
+            validset, valid_timeembedding = df_data[12 * 30 * 24 - window_size : 12 * 30 * 24 + 4 * 30 * 24], data_stamp[12 * 30 * 24 - window_size : 12 * 30 * 24 + 4 * 30 * 24]
+            testset, test_timeembedding = df_data[12 * 30 * 24 + 4 * 30 * 24 - window_size : 12 * 30 * 24 + 8 * 30 * 24], data_stamp[12 * 30 * 24 + 4 * 30 * 24 - window_size : 12 * 30 * 24 + 8 * 30 * 24]
+
+        if dataname == 'ettm1' or dataname == 'ettm2':
+            df_raw = pd.read_csv(datainfo.datadir)
+            cols = list(df_raw.columns)
+            cols.remove('date')
+            df_data = df_raw[cols]
+            df_stamp = df_raw[['date']].copy()
+            df_stamp['date'] = pd.to_datetime(df_stamp['date']).copy()
+            if timeenc == 0:
+                df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
+                df_stamp['day'] = df_stamp.date.apply(lambda row: row.day, 1)
+                df_stamp['weekday'] = df_stamp.date.apply(lambda row: row.weekday(), 1)
+                df_stamp['hour'] = df_stamp.date.apply(lambda row: row.hour, 1)
+                df_stamp['minute'] = df_stamp.date.apply(lambda row: row.minute, 1)
+                df_stamp['minute'] = df_stamp.minute.map(lambda x: x // 15)
+                data_stamp = df_stamp.drop(['date'], axis = 1).to_numpy()
+            elif timeenc == 1:
+                data_stamp = time_features(pd.to_datetime(df_stamp['date'].to_numpy()), freq=freq)
+                data_stamp = data_stamp.transpose(1, 0)
+                
+            df_data, df_stamp = df_data.to_numpy(), df_stamp.to_numpy()
+            trainset, train_timeembedding = df_data[ : 12 * 30 * 24 * 4], data_stamp[ : 12 * 30 * 24 * 4]
+            validset, valid_timeembedding = df_data[12 * 30 * 24 * 4 - window_size : 12 * 30 * 24 * 4 + 4 * 30 * 24 * 4], data_stamp[12 * 30 * 24 * 4 - window_size : 12 * 30 * 24 * 4 + 4 * 30 * 24 * 4]
+            testset, test_timeembedding = df_data[12 * 30 * 24 * 4 + 4 * 30 * 24 * 4 - window_size : 12 * 30 * 24 * 4 + 8 * 30 * 24 * 4], data_stamp[12 * 30 * 24 * 4 + 4 * 30 * 24 * 4 - window_size : 12 * 30 * 24 * 4 + 8 * 30 * 24 * 4]
+        
     return trainset, train_timeembedding, validset, valid_timeembedding, testset, test_timeembedding
+

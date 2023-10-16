@@ -72,7 +72,7 @@ def main(cfg):
     # save configs
     if accelerator.is_main_process:
         OmegaConf.save(cfg, os.path.join(savedir, 'configs.yaml'))
-    print(OmegaConf.to_yaml(cfg))
+        print(OmegaConf.to_yaml(cfg))
 
     # build Model
     model = create_model(

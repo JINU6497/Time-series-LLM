@@ -79,7 +79,7 @@ def main(cfg):
         modelname    = cfg.MODEL.modelname,
         params       = cfg.MODELSETTING
         )
-
+    
     # # load weights
     if cfg.TRAIN.resume:
         load_resume_model(model=model, savedir=savedir, resume_num=cfg.TRAIN.resume_number)

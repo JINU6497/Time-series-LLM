@@ -60,12 +60,11 @@ def training_long_term_forecasting(
         epoch_time = time.time()
         for idx, item in enumerate(trainloader):
             data_time_m.update(time.time() - end_time)
-
+            
             input_ts = item['given']['ts'].type(torch.float)
             input_timeembedding = item['given']['timeembedding'].type(torch.float)
             target_ts = item['target']['ts'].type(torch.float)
             target_timeembedding = item['target']['timeembedding'].type(torch.float)
-
             # decoder input
             dec_inp = torch.zeros_like(target_ts[:, -pred_len:, :]).type(torch.float)
             dec_inp = torch.cat([target_ts[:, :label_len, :], dec_inp], dim=1).type(torch.float)
@@ -88,8 +87,7 @@ def training_long_term_forecasting(
                             else:
                                 param.requires_grad = False
                         model = accelerator.prepare(model)
-                        print('Parameter freeze!')
-
+                        
                     x_enc, outputs = model(input_ts,
                                     input_timeembedding,
                                     dec_inp,
@@ -118,7 +116,7 @@ def training_long_term_forecasting(
             # batch time
             batch_time_m.update(time.time() - end_time)
             wandb_iteration += 1
-            
+            torch.cuda.empty_cache()
             if use_wandb and (wandb_iteration+1) % wandb_iter:
                 train_results = OrderedDict([
                     ('lr',optimizer.param_groups[0]['lr']),

@@ -2,7 +2,7 @@ window_size=96
 data_path=./dataset/ETT-small/ETTh1.csv
 data_name=ETTh1
 model_name=TMAE1
-batch_size=4
+batch_size=8
 
 accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
     --model_name $model_name \

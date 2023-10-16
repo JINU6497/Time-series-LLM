@@ -43,27 +43,28 @@ class TimesMaskingBlock(nn.Module):
             ],
             norm_layer=torch.nn.LayerNorm(configs.d_model)
         )
-        
-        # self.decoder = Decoder(
-        # [
-        #     DecoderLayer(
-        #         AttentionLayer(
-        #             FullAttention(True, configs.factor, attention_dropout=configs.dropout, output_attention=False),
-        #             configs.d_model, configs.n_heads),
-        #         AttentionLayer(
-        #             FullAttention(False, configs.factor, attention_dropout=configs.dropout, output_attention=False),
-        #             configs.d_model, configs.n_heads),
-        #         configs.d_model,
-        #         configs.d_ff,
-        #         dropout=configs.dropout,
-        #         activation=configs.activation,
-        #     )
-        #     for l in range(configs.d_layers)
-        # ],
-        # norm_layer=torch.nn.LayerNorm(configs.d_model)
-        # )
-        
-    def forward(self, x):
+
+        self.decoder = Decoder(
+            [
+                DecoderLayer(
+                    AttentionLayer(
+                        FullAttention(True, configs.factor, attention_dropout=configs.dropout,
+                                        output_attention=False),
+                        configs.d_model, configs.n_heads),
+                    AttentionLayer(
+                        FullAttention(False, configs.factor, attention_dropout=configs.dropout,
+                                        output_attention=False),
+                        configs.d_model, configs.n_heads),
+                    configs.d_model,
+                    configs.d_ff,
+                    dropout=configs.dropout,
+                    activation=configs.activation,
+                )
+                for l in range(configs.d_layers)
+            ],
+            norm_layer=torch.nn.LayerNorm(configs.d_model)
+        )
+    def forward(self, x, x_dec):
         B, T, N = x.size()
         period_list, period_weight = FFT_for_Period(x, self.k)
 
@@ -71,7 +72,7 @@ class TimesMaskingBlock(nn.Module):
         conv_masked_output = []
         total_input = []
         total_masked_output = []
-        
+
         for i in range(self.k):
             period = period_list[i]
             # padding
@@ -87,24 +88,27 @@ class TimesMaskingBlock(nn.Module):
             
             # 2D conv: from 1d Variation to 2d Variation
             conv_output_list = self.conv_resize_up_scailing(out)
-
+    
             for i in range(len(conv_output_list)):
-                Bm, Dm, Hm, Wm = conv_output_list[i].size()
+                Bm, Dm, Hm, Wm = conv_output_list[i].size() # B, D, H, W
                 masking_input = self.mask_specific_size(input_tensor = conv_output_list[i], 
                                                             mask_size = (3, 3),
-                                                            num_masked = 3 * (i+1)).reshape(Bm, -1, Dm)
-                conv_masked_output_flatten = self.encoder(masking_input, attn_mask=None)
-                conv_masked_output.append(conv_masked_output_flatten.reshape(Bm, Dm, Hm, Wm))
+                                                            num_masked = 3 * (i+1)).reshape(Bm, -1, Dm) # B, Window, D
+                enc_out = self.encoder(masking_input, attn_mask=None) # B, Window, D
+                dec_out = self.decoder(enc_out, x_dec) 
+                
+                conv_masked_output.append(dec_out.reshape(Bm, Dm, Hm, Wm))
 
-                total_input.append(conv_output_list[i].reshape(Bm, -1, Dm).detach().cpu().numpy())
-                total_masked_output.append(conv_masked_output_flatten.detach().cpu().numpy())
-            
+                # total_input.append(conv_output_list[i].reshape(Bm, -1, Dm).detach().cpu().numpy())
+                # total_masked_output.append(conv_masked_output_flatten.detach().cpu().numpy())
             out = self.conv_resizeback_up_scailing(conv_masked_output)
             conv_masked_output = []
             
             # reshape back
             out = out.permute(0, 2, 3, 1).reshape(B, -1, N)
-            res.append(out[:, :(self.window_size + self.pred_len), :])
+            res.append(out[:, :(self.window_size + self.pred_len), :])    
+            del out
+    
         res = torch.stack(res, dim=-1)
         # adaptive aggregation
         period_weight = F.softmax(period_weight, dim=1)
@@ -118,7 +122,7 @@ class TimesMaskingBlock(nn.Module):
     def mask_specific_size(self, input_tensor, mask_size = (3,3), num_masked = 5):
         batch_size, num_channels, height, width = input_tensor.size()
         masksize_H, masksize_W = mask_size
-        if height > masksize_H or width > masksize_W:
+        if height < masksize_H or width < masksize_W:
             return input_tensor 
 
         num_regions_H = height - masksize_H + 1
@@ -157,6 +161,8 @@ class TMAE1(nn.Module):
                                     for _ in range(configs.e_layers)])
         self.enc_embedding = DataEmbedding(configs.enc_in, configs.d_model, configs.embed, configs.freq,
                                            configs.dropout)
+        self.dec_embedding = DataEmbedding(configs.dec_in, configs.d_model, configs.embed, configs.freq,
+                                            configs.dropout)
         self.layer = configs.e_layers
         self.layer_norm = nn.LayerNorm(configs.d_model)
         
@@ -214,11 +220,13 @@ class TMAE1(nn.Module):
 
         # embedding
         enc_out = self.enc_embedding(x_enc, x_mark_enc)  # [B,T,C]
+        dec_out = self.dec_embedding(x_dec, x_mark_dec)  # [B,T,C]
+        
         enc_out = self.predict_linear(enc_out.permute(0, 2, 1)).permute(
             0, 2, 1)  # align temporal dimension
         # TimesNet
         for i in range(self.layer):
-            enc_out = self.layer_norm(self.model[i](enc_out))
+            enc_out = self.layer_norm(self.model[i](enc_out, dec_out))
         # porject back
         dec_out = self.projection(enc_out)
 

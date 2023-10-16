@@ -80,8 +80,9 @@ class LLM4TS(nn.Module):
     def encoder(self, x, x_mark):
         B, W, D = x.size()
         if self.mode == 'SFT':
-            means = x.mean(1, keepdim=True).detach()
-            stdev = torch.sqrt(torch.var(x, dim=1, keepdim=True, unbiased=False)+1e-5).detach() 
+            means = x.mean(1, keepdim=True).detach() # B, 1, D
+            stdev = torch.sqrt(torch.var(x, dim=1, keepdim=True, unbiased=False)+1e-5).detach() # B, 1, D
+            breakpoint()
             x = (x - means)/(stdev+0.0001)
         elif self.mode == 'DFT':
             x = self.revin_layer(x, 'norm')

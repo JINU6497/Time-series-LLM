@@ -69,6 +69,7 @@ class TimesMaskingBlock(nn.Module):
         period_list, period_weight = FFT_for_Period(x, self.k)
 
         res = []
+        breakpoint()
         for i in range(self.k):
             period = period_list[i]
             # padding

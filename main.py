@@ -81,8 +81,8 @@ def main(cfg):
         )
     
     # # load weights
-    if cfg.TRAIN.resume:
-        load_resume_model(model=model, savedir=savedir, resume_num=cfg.TRAIN.resume_number)
+    # if cfg.TRAIN.resume:
+    #     load_resume_model(model=model, savedir=savedir, resume_num=cfg.TRAIN.resume_number)
 
     _logger.info('# of learnable params: {}'.format(np.sum([p.numel() if p.requires_grad else 0 for p in model.parameters()])))
 

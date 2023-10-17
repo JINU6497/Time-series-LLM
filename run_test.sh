@@ -1,7 +1,7 @@
 window_size=96
 data_path=./dataset/ETT-small/ETTh1.csv
 data_name=ETTh1
-model_name=TMAE1
+model_name=TMAE2
 batch_size=4
 
 python main.py \

@@ -122,6 +122,7 @@ class TimesMaskingBlock(nn.Module):
     def mask_specific_size(self, input_tensor, mask_size = (3,3), num_masked = 5):
         batch_size, num_channels, height, width = input_tensor.size()
         masksize_H, masksize_W = mask_size
+        breakpoint()
         if height < masksize_H or width < masksize_W:
             return input_tensor 
 

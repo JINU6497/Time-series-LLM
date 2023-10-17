@@ -2,9 +2,9 @@ window_size=96
 data_path=./dataset/ETT-small/ETTm1.csv
 data_name=ETTm1
 model_name=TMAE1
-batch_size=4
+batch_size=16
 
-accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
+accelerate launch main.py \
     --model_name $model_name \
     --default_cfg ./configs/default_setting.yaml \
     --model_cfg ./configs/model_setting.yaml \
@@ -15,7 +15,7 @@ accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
     TRAIN.batch_size $batch_size \
     MODELSETTING.d_model 64
 
-accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
+accelerate launch main.py \
     --model_name $model_name \
     --default_cfg ./configs/default_setting.yaml \
     --model_cfg ./configs/model_setting.yaml \
@@ -26,7 +26,7 @@ accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
     TRAIN.batch_size $batch_size \
     MODELSETTING.d_model 64
 
-accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
+accelerate launch main.py \
     --model_name $model_name \
     --default_cfg ./configs/default_setting.yaml \
     --model_cfg ./configs/model_setting.yaml \
@@ -37,7 +37,7 @@ accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
     TRAIN.batch_size $batch_size \
     MODELSETTING.d_model 64
 
-accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
+accelerate launch main.py \
     --model_name $model_name \
     --default_cfg ./configs/default_setting.yaml \
     --model_cfg ./configs/model_setting.yaml \

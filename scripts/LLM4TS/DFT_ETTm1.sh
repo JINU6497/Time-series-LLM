@@ -5,7 +5,7 @@ model_name=LLM4TS
 batch_size=64
 
 
-accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
+accelerate launch main.py \
     --model_name $model_name \
     --default_cfg ./configs/default_setting.yaml \
     --model_cfg ./configs/model_setting.yaml \
@@ -16,7 +16,7 @@ accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
     TRAIN.batch_size $batch_size \
     MODELSETTING.mode DFT
 
-accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
+accelerate launch main.py \
     --model_name $model_name \
     --default_cfg ./configs/default_setting.yaml \
     --model_cfg ./configs/model_setting.yaml \
@@ -27,7 +27,7 @@ accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
     TRAIN.batch_size $batch_size \
     MODELSETTING.mode DFT
 
-accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
+accelerate launch main.py \
     --model_name $model_name \
     --default_cfg ./configs/default_setting.yaml \
     --model_cfg ./configs/model_setting.yaml \
@@ -38,7 +38,7 @@ accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
     TRAIN.batch_size $batch_size \
     MODELSETTING.mode DFT
 
-accelerate launch --multi_gpu --num_processes=2 --gpu_ids=0,1 main.py \
+accelerate launch main.py \
     --model_name $model_name \
     --default_cfg ./configs/default_setting.yaml \
     --model_cfg ./configs/model_setting.yaml \

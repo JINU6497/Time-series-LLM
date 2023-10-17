@@ -194,7 +194,6 @@ def training_long_term_forecasting(
                 best_score = eval_metrics[ckp_metric]
                 
             early_stopping(eval_metrics[early_stopping_metric])
-            print(eval_metrics[early_stopping_metric])
             if early_stopping.early_stop:
                 print("Early stopping")
                 break

@@ -151,55 +151,6 @@ def load_anomaly_dataset(dataname: str, datainfo: dict, subdataname: str = None,
         test_label = testset[ATTACK_FIELD].to_numpy()
         testset = testset.drop([TIMESTAMP_FIELD, ATTACK_FIELD], axis=1).to_numpy()
 
-
-    elif dataname == 'Hamon':
-        # trainset = pd.read_csv(os.path.join(datainfo.data_dir, f'Train_{subdataname}.csv'), index_col=0).dropna()
-        # train_timestamp = trainset.index
-        # valid_split_index = int(len(trainset) * valid_split_rate)
-        # validset = trainset.iloc[valid_split_index:].to_numpy()
-        # trainset = trainset.iloc[:valid_split_index].to_numpy()
-        # valid_timestamp = train_timestamp[valid_split_index:].to_numpy()
-        # train_timestamp = train_timestamp[:valid_split_index].to_numpy()
-        # testset = pd.read_csv(os.path.join(datainfo.data_dir, f'Test_{subdataname}.csv'), index_col=0).dropna()
-        # test_timestamp = testset.index
-        # test_label = pd.read_csv(os.path.join(datainfo.data_dir, f'Test_Label_{subdataname}.csv'), index_col=0).to_numpy()
-
-        trainset = pd.read_csv(os.path.join(datainfo.data_dir, f'Train_{subdataname}.csv')).dropna()
-        validset = pd.read_csv(os.path.join(datainfo.data_dir, f'Valid_{subdataname}.csv')).dropna()
-        testset = pd.read_csv(os.path.join(datainfo.data_dir, f'Test_{subdataname}.csv')).dropna()
-        if subdataname == 'new2':
-            trainset = trainset.drop(['mng_no', 'if_idx', 'svr_no'], axis=1)
-            validset = validset.drop(['mng_no', 'if_idx', 'svr_no'], axis=1)
-            testset = testset.drop(['mng_no', 'if_idx', 'svr_no'], axis=1)
-        # print(trainset.shape, validset.shape, testset.shape)
-        # print(trainset.columns)
-        TIMESTAMP_FIELD = "ymdhms"
-        ATTACK_FIELD = "target"
-        train_timestamp = trainset[TIMESTAMP_FIELD].astype(str)
-        valid_timestamp = validset[TIMESTAMP_FIELD].astype(str)
-        # train_timestamp = pd.to_datetime(train_timestamp, format='%Y%m%d%H%M%S%f')
-        # valid_timestamp = pd.to_datetime(valid_timestamp, format='%Y%m%d%H%M%S%f')
-        trainset = trainset.drop([TIMESTAMP_FIELD, ATTACK_FIELD], axis=1).to_numpy()
-        validset = validset.drop([TIMESTAMP_FIELD, ATTACK_FIELD], axis=1).to_numpy()
-        test_timestamp = testset[TIMESTAMP_FIELD].astype(str)
-        # test_timestamp = pd.to_datetime(test_timestamp, format='%Y%m%d%H%M%S%f')
-        test_label = testset[ATTACK_FIELD].to_numpy()
-        testset = testset.drop([TIMESTAMP_FIELD, ATTACK_FIELD], axis=1).to_numpy()
-
-    elif dataname == 'KETI':
-        trainset = pd.read_csv(os.path.join(datainfo.data_dir, f'Train_{subdataname}.csv'), index_col=0).dropna()
-        trainset = trainset.reset_index(drop=True)
-        train_timestamp = trainset.index
-        valid_split_index = int(len(trainset) * valid_split_rate)
-        validset = trainset.iloc[valid_split_index:].to_numpy()
-        trainset = trainset.iloc[:valid_split_index].to_numpy()
-        valid_timestamp = train_timestamp[valid_split_index:].to_numpy()
-        train_timestamp = train_timestamp[:valid_split_index].to_numpy()
-        testset = pd.read_csv(os.path.join(datainfo.data_dir, f'Test_{subdataname}.csv'), index_col=0).dropna()
-        testset = testset.reset_index(drop=True)
-        test_timestamp = testset.index
-        test_label = pd.read_csv(os.path.join(datainfo.data_dir, f'Test_Label_{subdataname}.csv'), index_col=0).to_numpy()
-        
     else:
         trainset = np.load(os.path.join(datainfo.train_dir, f'{subdataname}.npy'))
         testset = np.load(os.path.join(datainfo.test_dir, f'{subdataname}.npy'))

@@ -70,6 +70,7 @@ def main(cfg):
                         information_dict = information_dict)
 
     # save configs
+    accelerator.wait_for_everyone()
     if accelerator.is_main_process:
         OmegaConf.save(cfg, os.path.join(savedir, 'configs.yaml'))
         print(OmegaConf.to_yaml(cfg))
@@ -83,13 +84,13 @@ def main(cfg):
     # # load weights
     if cfg.TRAIN.resume:
         load_resume_model(model=model, savedir=savedir, resume_num=cfg.TRAIN.resume_number)
-
+    
     _logger.info('# of learnable params: {}'.format(np.sum([p.numel() if p.requires_grad else 0 for p in model.parameters()])))
-
+    
     # set training
     criterion = create_criterion(loss_name=cfg.LOSS.loss_name)
     optimizer = create_optimizer(model=model, opt_name=cfg.OPTIMIZER.opt_name, lr=cfg.OPTIMIZER.lr, params=cfg.OPTIMIZER.params)
-
+    
     model, optimizer, trn_dataloader, valid_dataloader, test_dataloader = accelerator.prepare(
         model, optimizer, trn_dataloader, valid_dataloader, test_dataloader
     )
@@ -133,9 +134,7 @@ def main(cfg):
         # torch.cuda.empty_cache()
 
         # load best checkpoint weights
-        model = accelerator.unwrap_model(model)
         model.load_state_dict(torch.load(os.path.join(savedir, 'best_model.pt')))
-        model = accelerator.prepare(model)
         
         # test results
         fine_tuning_test_metrics = test_long_term_forecasting(
@@ -150,12 +149,14 @@ def main(cfg):
         savedir       = savedir,
         model_name    = cfg.MODEL.modelname,
         model_config  = cfg.MODELSETTING,
-        return_output = False
+        return_output = cfg.TRAIN.return_output
         )
 
-    _logger.info('{} test_metrics: {}'.format(cfg.DATASET.taskname, fine_tuning_test_metrics))
-    json.dump(fine_tuning_test_metrics, open(os.path.join(savedir, 
-                        f'{cfg.DATASET.taskname}test_results.json'),'w'), indent='\t', cls=Float32Encoder)
+    accelerator.wait_for_everyone()
+    if accelerator.is_main_process:
+        _logger.info('{} test_metrics: {}'.format(cfg.DATASET.taskname, fine_tuning_test_metrics))
+        json.dump(fine_tuning_test_metrics, open(os.path.join(savedir, 
+                            f'{cfg.DATASET.taskname}test_results.json'),'w'), indent='\t', cls=Float32Encoder)
 
 if __name__=='__main__':
     cfg = parser()

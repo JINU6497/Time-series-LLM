@@ -12,7 +12,7 @@ from accelerate.logging import get_logger
 
 from utils.metrics import cal_forecast_metric
 from utils.utils import Float32Encoder
-from utils.tools import EarlyStopping, adjust_learning_rate
+from utils.tools import EarlyStopping, adjust_learning_rate, check_forecasting_graph
 
 _logger = get_logger('train')
 
@@ -104,7 +104,7 @@ def training_long_term_forecasting(
                 outputs = outputs[:, -pred_len:, :]
                 target_ts = target_ts[:, -pred_len:, :]           
                 loss = criterion(outputs, target_ts)
-        
+            
             accelerator.backward(loss)
             
             # loss update
@@ -116,7 +116,7 @@ def training_long_term_forecasting(
             # batch time
             batch_time_m.update(time.time() - end_time)
             wandb_iteration += 1
-            torch.cuda.empty_cache()
+            
             if use_wandb and (wandb_iteration+1) % wandb_iter:
                 train_results = OrderedDict([
                     ('lr',optimizer.param_groups[0]['lr']),
@@ -183,12 +183,8 @@ def training_long_term_forecasting(
                 # save model
                 accelerator.wait_for_everyone()
                 if accelerator.is_main_process:
-                    unwrapped_model = accelerator.unwrap_model(model)
-                    if model_name == 'LLM4TS':
-                        torch.save(unwrapped_model.state_dict(), os.path.join(savedir, f'best_model.pt'))
-                    else:
-                        torch.save(unwrapped_model.state_dict(), os.path.join(savedir, f'best_model.pt'))
-                        
+                    torch.save(model.state_dict(), os.path.join(savedir, f'best_model.pt'))
+                    
                     _logger.info('Best {0} {1:6.6f} to {2:6.6f}'.format(ckp_metric.upper(), best_score, eval_metrics[ckp_metric]))
 
                 best_score = eval_metrics[ckp_metric]
@@ -209,11 +205,7 @@ def training_long_term_forecasting(
     # save latest model
     accelerator.wait_for_everyone()
     if accelerator.is_main_process:
-        unwrapped_model = accelerator.unwrap_model(model)
-        if model_name == 'LLM4TS':
-            torch.save(unwrapped_model.state_dict(), os.path.join(savedir, f'latest_model.pt'))
-        else:
-            torch.save(unwrapped_model.state_dict(), os.path.join(savedir, f'latest_model.pt'))
+        torch.save(model.state_dict(), os.path.join(savedir, f'latest_model.pt'))
 
         print('Save latest model complete, epoch: {0:}: Best metric has changed from {1:.5f} \
             to {2:.5f}'.format(epoch, best_score, eval_metrics[ckp_metric]))
@@ -330,5 +322,13 @@ def test_long_term_forecasting(model, dataloader, criterion, accelerator: Accele
             np.save(os.path.join(savedir, f'{name}_total_targets.npy'), total_targets)
         if name == 'TEST':
             np.save(os.path.join(savedir, f'{name}_Done.npy'), np.arange(1,5))
+                
+        start_graph = check_forecasting_graph(total_targets, total_outputs, point=0 ,piece = 4)
+        end_graph = check_forecasting_graph(total_targets, total_outputs, point=-1 ,piece = 4)
+        figure_path = os.path.join(savedir, 'fig')
+        if not os.path.exists(figure_path):
+            os.makedirs(figure_path)
+        start_graph.savefig(os.path.join(figure_path, f'{name}_start_whole.png'))
+        end_graph.savefig(os.path.join(figure_path, f'{name}_end_whole.png'))
 
     return results

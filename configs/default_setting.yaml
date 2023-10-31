@@ -26,7 +26,7 @@ DATAINFO:
 
 TRAIN:
   epoch: 25
-  batch_size: 32
+  batch_size: 64
   test_batch_size: 4
   num_workers: 0
   ckp_metric: MSE
@@ -38,7 +38,8 @@ TRAIN:
   resume: false
   resume_number: 0
   early_stopping_metric: loss
-  early_stopping_count: 5
+  early_stopping_count: 20
+  return_output: true
   lradj: type1
   wandb: 
     use: false

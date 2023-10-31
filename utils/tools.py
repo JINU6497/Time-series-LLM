@@ -128,7 +128,7 @@ def test_params_flop(model,x_shape):
         print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
         print('{:<30}  {:<8}'.format('Number of parameters: ', params))
         
-def check_graph(xs, att, piece=1, threshold=None):
+def check_ano_graph(xs, att, piece=1, threshold=None):
     """
     anomaly score and anomaly label visualization
 
@@ -168,46 +168,15 @@ def check_graph(xs, att, piece=1, threshold=None):
 
     return fig
 
-
-
-def check_log_graph(xs, att, piece=1, threshold=None):
-    """
-    anomaly score and anomaly label visualization
-
-    Parameters
-    ----------
-    xs : np.ndarray
-        anomaly scores
-    att : np.ndarray
-        anomaly labels
-    piece : int
-        number of figures to separate
-    threshold : float(default=None)
-        anomaly threshold
-
-    Return
-    ------
-    fig : plt.figure
-    """
-    l = xs.shape[0]
+def check_forecasting_graph(true, predict, point, piece=1, OT_index=-1, threshold=None):
+    l = true.shape[0]
     chunk = l // piece
     fig, axs = plt.subplots(piece, figsize=(20, 4 * piece))
     for i in range(piece):
         L = i * chunk
         R = min(L + chunk, l)
         xticks = np.arange(L, R)
-        axs[i].plot(xticks, np.log(xs[L:R]), color='#0C090A')
-        ymin, ymax = axs[i].get_ylim()
-        ymin = 0
-        
-
-        axs[i].set_ylim(ymin, ymax)
-        if len(xs[L:R]) > 0:
-            axs[i].vlines(xticks[np.where(att[L:R] == 1)], ymin=ymin, ymax=ymax, color='#FED8B1',
-                          alpha=0.6, label='true anomaly')
-        axs[i].plot(xticks, np.log(xs[L:R]), color='#0C090A', label='anomaly score')
-        if threshold is not None:
-            axs[i].axhline(y=np.log(threshold), color='r', linestyle='--', alpha=0.8, label=f'threshold:{threshold:.4f}')
+        axs[i].plot(xticks, true[L:R, point, OT_index], color='orangered', label='true')
+        axs[i].plot(xticks, predict[L:R, point, OT_index], color='midnightblue', label='predict')
         axs[i].legend()
-        
     return fig

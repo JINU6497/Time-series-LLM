@@ -6,7 +6,22 @@ from layers.Embed import DataEmbedding
 from layers.Conv_Blocks import conv_resize_up_scailing, conv_resizeback_up_scailing
 from layers.Transformer_EncDec import Decoder, DecoderLayer, Encoder, EncoderLayer, ConvLayer
 from layers.SelfAttention_Family import ProbAttention, AttentionLayer, FullAttention
+
+import statsmodels.api as sm
+
 import pdb
+
+# def calculate_acf(x):
+#     """Calculate the autocorrelation function using fast fourier transform"""
+#     N = float(len(x))
+#     pow2 = int(2**np.ceil(np.log2(len(x))))
+#     x_new = np.zeros(pow2,float)
+#     x_new[:len(x)] = x
+#     FT = fft(x_new)
+#     acf = (ifft(FT*np.conjugate(FT)).real)/N
+#     acf /= acf.max()
+#     acf = acf[:len(acf)/2]
+#     return acf
 
 def FFT_for_Period(x, k=2):
     # [B, T, C]
@@ -18,6 +33,7 @@ def FFT_for_Period(x, k=2):
     top_list = top_list.detach().cpu().numpy()
     period = x.shape[1] // top_list
     return period, abs(xf).mean(-1)[:, top_list]
+
 
 class TimesMaskingBlock(nn.Module):
     def __init__(self, configs):

@@ -34,7 +34,8 @@ TMAE1:
   embed: timeF
 
 TMAE2:  
-  patch_size: 12
+  patch_size: 3
+  mask_ratio: 0.6
   stride: 12
   e_layers: 2
   d_layers: 1 
@@ -42,15 +43,18 @@ TMAE2:
   enc_in: 125 
   dec_in: 125 
   c_out: 125 
-  d_model: 16 
+  enc_d_model: 16
+  dec_d_model: 16
   d_ff: 64 
-  top_k: 3
+  top_k: 10
   dropout: 0.1
-  n_heads: 2
+  enc_n_heads: 2
+  dec_n_heads: 1
   output_attention: None
   mode: pretrain
   activation: gelu
   embed: timeF
+  mlp_ratio: 4
 
 PatchTST:
   e_layers: 2
